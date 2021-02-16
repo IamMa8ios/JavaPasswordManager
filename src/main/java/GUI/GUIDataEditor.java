@@ -2,6 +2,7 @@ package GUI;
 
 import DBUtils.DBManager;
 import Security.MattSecurityHelper;
+import Security.SimpleLogger;
 
 import javax.swing.*;
 import java.awt.*;
@@ -44,6 +45,7 @@ public final class GUIDataEditor extends JFrame {
         }else{
             JOptionPane.showMessageDialog(null, "Password for the data given not found", "ERROR", JOptionPane.ERROR_MESSAGE);
             dispose();
+            new HomePage();
         }
         editMode=true;
     }
@@ -101,7 +103,7 @@ public final class GUIDataEditor extends JFrame {
         return !appText.getText().equals("") && !userText.getText().equals("") && !passText.getText().equals("");
     }
 
-    private class SaveAction implements ActionListener{
+    private final class SaveAction implements ActionListener{
 
         @Override
         public void actionPerformed(ActionEvent e) {
@@ -109,7 +111,19 @@ public final class GUIDataEditor extends JFrame {
             if(allFilled()){
                 int[] partNums=GUIMiscHelper.readPartNums("Insert the sequence of numbers to encrypt your password");
                 if(partNums!=null){
-                    DBManager.saveData(appText.getText(), userText.getText(), passText.getText(), partNums,editMode);
+                    if(DBManager.saveData(appText.getText(), userText.getText(), passText.getText(), partNums,editMode)){
+                        if(editMode){
+                            SimpleLogger.logAction(this.getClass().getName(), "Password edit succeeded");
+                        }else{
+                            SimpleLogger.logAction(this.getClass().getName(), "Password addition succeeded");
+                        }
+                    }else{
+                        if(editMode){
+                            SimpleLogger.logAction(this.getClass().getName(), "Password edit failed");
+                        }else{
+                            SimpleLogger.logAction(this.getClass().getName(), "Password addition failed");
+                        }
+                    }
                     dispose();
                     new HomePage();
                 }
@@ -120,7 +134,7 @@ public final class GUIDataEditor extends JFrame {
         }
     }
 
-    private class GenerateAction implements ActionListener{
+    private final class GenerateAction implements ActionListener{
 
         @Override
         public void actionPerformed(ActionEvent e) {

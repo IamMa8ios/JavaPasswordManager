@@ -1,6 +1,7 @@
 package GUI;
 
 import DBUtils.DBManager;
+import Security.SimpleLogger;
 
 import javax.swing.*;
 import java.awt.*;
@@ -81,7 +82,7 @@ public final class HomePage extends JFrame {
 
     private void addActions(){
         copyButton.addActionListener(new CopyAction());
-        newButton.addActionListener(new ActionListener() {@Override public void actionPerformed(ActionEvent e) { new GUIDataEditor(); dispose(); } });
+        newButton.addActionListener(new NewAction());
         editButton.addActionListener(new EditAction());
         deleteButton.addActionListener(new DeleteAction());
     }
@@ -93,23 +94,25 @@ public final class HomePage extends JFrame {
             if(selectedRow!=-1){
                 int[] serialNums=GUIMiscHelper.readPartNums("Insert number sequence to decrypt your password");
                 if(serialNums!=null){
-                    DBManager.getPass(rows.get(selectedRow).getAppName(), rows.get(selectedRow).getUsername(), serialNums);
+                    if(DBManager.getPass(rows.get(selectedRow).getAppName(), rows.get(selectedRow).getUsername(), serialNums)!=null){
+                        SimpleLogger.logAction(this.getClass().getName(), "Password copy succeeded");
+                    }else{
+                        SimpleLogger.logAction(this.getClass().getName(), "Password copy failed");
+                    }
                 }
             }else{
-                JOptionPane.showMessageDialog(null, "Please select a password first", "WARNING", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(null, "Select a password first", "WARNING", JOptionPane.WARNING_MESSAGE);
             }
         }
     }
 
-    private final class RefreshAction implements ActionListener{
+    private final class NewAction implements ActionListener{
+
         @Override
         public void actionPerformed(ActionEvent e) {
-            pane.removeAll();
-            dataPanel.removeAll();
-            rows=DBManager.loadData();
-            putInOrder();
-            repaint();
-            revalidate();
+            SimpleLogger.logAction(this.getClass().getName(), "Attempting to add a new password");
+            dispose();
+            new GUIDataEditor();
         }
     }
 
@@ -135,8 +138,13 @@ public final class HomePage extends JFrame {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            new GUIDataEditor(rows.get(selectedRow).getAppName(), rows.get(selectedRow).getAppName());
-            dispose();
+            if(selectedRow!=-1){
+                SimpleLogger.logAction(this.getClass().getName(), "Attempting to edit a password");
+                dispose();
+                new GUIDataEditor(rows.get(selectedRow).getAppName(), rows.get(selectedRow).getAppName());
+            }else{
+                JOptionPane.showMessageDialog(null, "Select a password first", "WARNING", JOptionPane.WARNING_MESSAGE);
+            }
         }
     }
 
@@ -144,9 +152,18 @@ public final class HomePage extends JFrame {
 
         @Override
         public void actionPerformed(ActionEvent e) {
-            DBManager.deleteData(rows.get(selectedRow).getAppName(), rows.get(selectedRow).getAppName());
-            dispose();
-            new HomePage();
+            if(selectedRow!=-1){
+                SimpleLogger.logAction(this.getClass().getName(), "Attempting to delete a password");
+                if(DBManager.deleteData(rows.get(selectedRow).getAppName(), rows.get(selectedRow).getAppName())){
+                    SimpleLogger.logAction(this.getClass().getName(), "Deleting password succeeded");
+                }else{
+                    SimpleLogger.logAction(this.getClass().getName(), "Deleting password failed");
+                }
+                dispose();
+                new HomePage();
+            }else{
+                JOptionPane.showMessageDialog(null, "Select a password first", "WARNING", JOptionPane.WARNING_MESSAGE);
+            }
         }
     }
 

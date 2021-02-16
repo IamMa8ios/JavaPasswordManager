@@ -13,6 +13,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.security.SecureRandom;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -38,12 +39,12 @@ public final class DBManager {
             //stat.executeUpdate("DROP table if exists KeyTable;");
             //stat.executeUpdate("DROP table if exists DataTable;");
             stat.executeUpdate("CREATE TABLE IF NOT EXISTS KeyTable(serialNo INT, part VARBINARY);");
-            stat.executeUpdate("CREATE TABLE IF NOT EXISTS DataTable(appName VARCHAR, username VARCHAR, pass VARBINARY);");
+            stat.executeUpdate("CREATE TABLE IF NOT EXISTS DataTable(appName VARCHAR, username VARCHAR, pass VARBINARY, lastEdit VARCHAR);");
             conn.commit();
 
             PreparedStatement statement=conn.prepareStatement("SELECT COUNT(serialNo) FROM Keytable;");
             ResultSet resultSet=statement.executeQuery();
-            
+
             if(resultSet.next()){
                 if(resultSet.getInt(1)==0) {
                     byte[] key=MattSecurityHelper.createSymmetricKey();
@@ -279,35 +280,54 @@ public final class DBManager {
         try{
             Class.forName("org.sqlite.JDBC");
 
-            Connection conn= DriverManager.getConnection("jdbc:sqlite:data.db");
+            Connection conn=DriverManager.getConnection("jdbc:sqlite:data.db");
 
             //System.out.println ("inserting data");
 
-            //create Secret Key
-            SecretKey secretKey=new SecretKeySpec(loadKey(partNums), "AES");
-            byte[] encryptedPass=MattSecurityHelper.encrypt(pass, secretKey);
+            if(partNums!=null){
 
-            if((dataExists(appName, username) && editMode)){
-                PreparedStatement stat = conn.prepareStatement("UPDATE DataTable SET pass=? WHERE appName=? AND username=?;");
-                stat.setString(2, appName);
-                stat.setString(3, username);
-                stat.setBytes(1, encryptedPass);
-                stat.executeUpdate();
+                //load key from partNumbers
+                byte[] keyBytes=loadKey(partNums);
 
-                stat.close();
-                conn.close();
-                return true;
-            }else if(!editMode && !dataExists(appName, username)){
-                PreparedStatement stat = conn.prepareStatement("INSERT INTO DataTable(appName, username, pass) VALUES(?, ?, ?);");
-                stat.setString(1, appName);
-                stat.setString(2, username);
-                stat.setBytes(3, encryptedPass);
-                stat.executeUpdate();
+                if(keyBytes!=null){
 
-                stat.close();
-                conn.close();
-                conn.close();
-                return true;
+                    //attempt to encrypt with given key
+                    SecretKey secretKey=new SecretKeySpec(keyBytes, "AES");
+                    byte[] encryptedPass=MattSecurityHelper.encrypt(pass, secretKey);
+
+                    if(encryptedPass!=null){
+
+                        if((dataExists(appName, username) && editMode)){
+                            PreparedStatement stat = conn.prepareStatement("UPDATE DataTable SET pass=?, lastEdit=? WHERE appName=? AND username=?;");
+                            stat.setString(3, appName);
+                            stat.setString(4, username);
+                            stat.setBytes(1, encryptedPass);
+                            stat.setString(2, LocalDateTime.now().toString());
+                            stat.executeUpdate();
+
+                            stat.close();
+                            conn.close();
+                            return true;
+                        }else if(!editMode && !dataExists(appName, username)){
+                            PreparedStatement stat = conn.prepareStatement("INSERT INTO DataTable(appName, username, pass, lastEdit) VALUES(?, ?, ?, ?);");
+                            stat.setString(1, appName);
+                            stat.setString(2, username);
+                            stat.setBytes(3, encryptedPass);
+                            stat.setString(4, LocalDateTime.now().toString());
+                            stat.executeUpdate();
+
+                            stat.close();
+                            conn.close();
+                            conn.close();
+                            return true;
+                        }
+
+                    }else{
+                        JOptionPane.showMessageDialog(null, "Key could not be loaded from given sequence", "ERROR", JOptionPane.ERROR_MESSAGE);
+                    }
+                }else{
+                    JOptionPane.showMessageDialog(null, "Key could not be loaded from given sequence", "ERROR", JOptionPane.ERROR_MESSAGE);
+                }
             }
 
         } catch (ClassNotFoundException ex) {
