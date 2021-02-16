@@ -10,10 +10,10 @@ IMPORTANT: DO NOT FORGET THE SEQUENCE
 
 After that, you will be presented with any previously stored passwords and their accompanying data and four buttons:
 
-Copy: copies your password to clipboard. You have to insert the number sequence.
-New: store a new password in the db. You have to insert the number sequence.
-Edit: select a password from the list first and edit aby data you want. You have to insert the number sequence.
-Delete: select a password from the list and delete it.
+  Copy: copies your password to clipboard. You have to insert the number sequence.
+  New: store a new password in the db. You have to insert the number sequence.
+  Edit: select a password from the list first and edit aby data you want. You have to insert the number sequence.
+  Delete: select a password from the list and delete it.
 
 How it works:
 
