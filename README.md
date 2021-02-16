@@ -17,9 +17,9 @@ After that, you will be presented with any previously stored passwords and their
 
 How it works:
 
-You are given a Secret Key for the AES algorithm.
-That key is converted to a byte array and split in as many parts as the you want (Total of numbers in sequence).
-1000 more random byte arrays are created to make it harder to find the useful parts.
-The key parts are inserted in the list with the dummy data in their expected positions.
-All parts are stored in the database.
-To insert or retrieve any data, you must insert the sequence to assemble the key.
+1. You are given a Secret Key for the AES algorithm.
+2. That key is converted to a byte array and split in as many parts as the you want (Total of numbers in sequence).
+3. 1000 more random byte arrays are created to make it harder to find the useful parts.
+4. The key parts are inserted in the list with the dummy data in their expected positions.
+5. All parts are stored in the database.
+6. To insert or retrieve any data, you must insert the sequence to assemble the key.
